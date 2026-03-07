@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #0a0a0a;
+  --color-foreground: #ffffff;
+  --color-accent-primary: #6366f1;
+  --color-accent-secondary: #a855f7;
+
+  --font-sans: "Inter", "system-ui", "sans-serif";
+
+  --animate-gradient-y: gradient-y 8s ease infinite;
+  --animate-gradient-x: gradient-x 8s ease infinite;
+  --animate-gradient-xy: gradient-xy 8s ease infinite;
+
+  @keyframes gradient-y {
+
+    0%,
+    100% {
+      background-size: 400% 400%;
+      background-position: center top;
+    }
+
+    50% {
+      background-size: 200% 200%;
+      background-position: center bottom;
+    }
+  }
+
+  @keyframes gradient-x {
+
+    0%,
+    100% {
+      background-size: 200% 200%;
+      background-position: left center;
+    }
+
+    50% {
+      background-size: 200% 200%;
+      background-position: right center;
+    }
+  }
+
+  @keyframes gradient-xy {
+
+    0%,
+    100% {
+      background-size: 400% 400%;
+      background-position: left center;
+    }
+
+    50% {
+      background-size: 200% 200%;
+      background-position: right center;
+    }
+  }
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply text-foreground antialiased selection:bg-accent-primary/30 selection:text-white;
+  overflow-x: hidden;
+  background: #0b0b0b;
+}
+
+/* Glassmorphism Effect */
+.glass {
+  @apply bg-white/5 backdrop-blur-md border border-white/10;
+}
+
+.glass-dark {
+  @apply bg-black/20 backdrop-blur-lg border border-white/5;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-white/10 rounded-full hover:bg-white/20 transition-colors;
+}
+
+/* Glow Effects */
+.glow-primary {
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+}
+
+.glow-secondary {
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.2);
+}
+
+/* Hero Gradient Background */
+.hero-gradient {
+  background: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
+}
