@@ -132,17 +132,23 @@ const LiquidBlob = () => {
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
-  const springConfig = { damping: 25, stiffness: 150 };
+  const springConfig = { damping: 30, stiffness: 100 }; // Softer springs for performance
   const springX = useSpring(mouseX, springConfig);
   const springY = useSpring(mouseY, springConfig);
 
   React.useEffect(() => {
+    let frameId: number;
     const handleMouseMove = (e: MouseEvent) => {
-      mouseX.set(e.clientX);
-      mouseY.set(e.clientY);
+      frameId = requestAnimationFrame(() => {
+        mouseX.set(e.clientX);
+        mouseY.set(e.clientY);
+      });
     };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      cancelAnimationFrame(frameId);
+    };
   }, [mouseX, mouseY]);
 
   return (
@@ -150,11 +156,12 @@ const LiquidBlob = () => {
       <svg className="hidden">
         <defs>
           <filter id="goo">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="40" result="blur" />
+            {/* Reduced stdDeviation for better performance */}
+            <feGaussianBlur in="SourceGraphic" stdDeviation="20" result="blur" />
             <feColorMatrix
               in="blur"
               mode="matrix"
-              values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 40 -12"
+              values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7"
               result="goo"
             />
             <feComposite in="SourceGraphic" in2="goo" operator="atop" />
@@ -175,7 +182,8 @@ const LiquidBlob = () => {
               opacity: 0.1,
               left: `${20 + i * 15}%`,
               top: `${10 + i * 20}%`,
-              filter: 'blur(80px)',
+              filter: 'blur(60px)', // Slightly reduced blur
+              willChange: 'transform',
             }}
             animate={{
               x: [0, 50, -50, 0],
@@ -192,7 +200,7 @@ const LiquidBlob = () => {
 
         {/* Mouse Following Liquid Blob */}
         <motion.div
-          className="absolute rounded-full bg-gradient-to-br from-accent-primary/40 to-accent-secondary/40 backdrop-blur-3xl"
+          className="absolute rounded-full bg-gradient-to-br from-accent-primary/40 to-accent-secondary/40 backdrop-blur-2xl"
           style={{
             width: 450,
             height: 450,
@@ -200,7 +208,8 @@ const LiquidBlob = () => {
             y: springY,
             translateX: '-50%',
             translateY: '-50%',
-            boxShadow: '0 0 100px var(--color-accent-primary)',
+            boxShadow: '0 0 80px var(--color-accent-primary)',
+            willChange: 'transform',
           }}
         />
 
@@ -214,6 +223,7 @@ const LiquidBlob = () => {
             y: useTransform(springY, (v) => v * 0.5),
             translateX: '100%',
             translateY: '100%',
+            willChange: 'transform',
           }}
         />
       </div>
@@ -221,25 +231,21 @@ const LiquidBlob = () => {
   );
 };
 
-const SunsetBar = ({ initialPos, color, length, speed, rotationZ }: { initialPos: THREE.Vector3, color: string, length: number, speed: number, rotationZ: number }) => {
+const SunsetBar = React.memo(({ initialPos, color, length, speed, rotationZ }: { initialPos: THREE.Vector3, color: string, length: number, speed: number, rotationZ: number }) => {
   const meshRef = React.useRef<THREE.Mesh>(null);
 
   useFrame((state) => {
     if (!meshRef.current) return;
     const time = state.clock.getElapsedTime();
 
-    // Random diagonal movement with wrapping
     meshRef.current.position.x += speed * 0.1;
     meshRef.current.position.y -= speed * 0.06;
 
-    // Boundary check and wrap
     if (meshRef.current.position.x > 15) meshRef.current.position.x = -15;
     if (meshRef.current.position.y < -10) meshRef.current.position.y = 10;
 
-    // Small orbital drift
     meshRef.current.position.z = initialPos.z + Math.sin(time * 0.5 + initialPos.x) * 0.5;
 
-    // Rotation
     meshRef.current.rotation.x += 0.001;
     meshRef.current.rotation.y += 0.002;
   });
@@ -247,112 +253,103 @@ const SunsetBar = ({ initialPos, color, length, speed, rotationZ }: { initialPos
   return (
     <mesh ref={meshRef} position={initialPos} rotation={[0, 0, rotationZ]}>
       <boxGeometry args={[length, 0.25, 0.15]} />
-      <meshStandardMaterial
+      {/* Changed to meshLambertMaterial for performance */}
+      <meshLambertMaterial
         color={color}
         emissive={color}
-        emissiveIntensity={1.5}
-        roughness={0.3}
-        metalness={0.5}
+        emissiveIntensity={1.2}
       />
     </mesh>
   );
-};
+});
 
-const MovingRoad = ({ scrollY }: { scrollY: number }) => {
+const MovingRoad = React.memo(({ scrollY }: { scrollY: number }) => {
   const meshRef = React.useRef<THREE.Mesh>(null);
   const materialRef = React.useRef<THREE.MeshStandardMaterial>(null);
 
   useFrame((state) => {
     if (!materialRef.current) return;
     const time = state.clock.getElapsedTime();
-    // Move texture for "infinite road" effect
     materialRef.current.map!.offset.y = -(time * 0.4 + scrollY * 0.005) % 1;
   });
 
-  // Create a grid texture for the road
   const texture = React.useMemo(() => {
     const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 512;
+    canvas.width = 256; // Reduced resolution from 512
+    canvas.height = 256;
     const ctx = canvas.getContext('2d')!;
     ctx.strokeStyle = '#333';
     ctx.lineWidth = 4;
 
-    // Horizontal lines
-    for (let i = 0; i <= 10; i++) {
+    for (let i = 0; i <= 8; i++) { // Reduced number of lines
       ctx.beginPath();
-      ctx.moveTo(0, i * 51.2);
-      ctx.lineTo(512, i * 51.2);
+      ctx.moveTo(0, i * 32);
+      ctx.lineTo(256, i * 32);
       ctx.stroke();
-    }
-
-    // Vertical lines
-    for (let i = 0; i <= 10; i++) {
       ctx.beginPath();
-      ctx.moveTo(i * 51.2, 0);
-      ctx.lineTo(i * 51.2, 512);
+      ctx.moveTo(i * 32, 0);
+      ctx.lineTo(i * 32, 256);
       ctx.stroke();
     }
 
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.minFilter = THREE.LinearFilter;
     return tex;
   }, []);
 
   return (
     <mesh ref={meshRef} rotation={[-Math.PI / 2.1, 0, 0]} position={[0, -2.5, 0]}>
-      <planeGeometry args={[40, 60, 32, 32]} />
+      <planeGeometry args={[40, 60, 16, 16]} /> {/* Reduced segments */}
       <meshStandardMaterial
         ref={materialRef}
         map={texture}
         color="#111"
         emissive="#000"
-        roughness={0.1}
-        metalness={0.8}
+        roughness={0.2}
+        metalness={0.7}
         transparent
         opacity={0.8}
       />
-      {/* Central Light Lane */}
       <mesh position={[0, 0, 0.01]}>
         <planeGeometry args={[0.15, 60]} />
-        <meshStandardMaterial color="#ff7a30" emissive="#ff7a30" emissiveIntensity={5} />
+        <meshLambertMaterial color="#ff7a30" emissive="#ff7a30" emissiveIntensity={3} />
       </mesh>
     </mesh>
   );
-};
+});
 
-const Scene = ({ scrollY }: { scrollY: number }) => {
+const Scene = React.memo(({ scrollY }: { scrollY: number }) => {
   const { camera, mouse } = useThree();
 
   useFrame(() => {
-    // Mouse parallax
-    const targetX = mouse.x * 0.4;
-    const targetY = mouse.y * 0.2 + (scrollY * 0.001);
+    const targetX = mouse.x * 0.3; // Reduced sensitivity
+    const targetY = mouse.y * 0.15 + (scrollY * 0.0008);
 
-    camera.position.x += (targetX - camera.position.x) * 0.05;
-    camera.position.y += (targetY - camera.position.y) * 0.05;
+    camera.position.x += (targetX - camera.position.x) * 0.03; // Smoother transition
+    camera.position.y += (targetY - camera.position.y) * 0.03;
     camera.lookAt(0, 0, -5);
   });
 
   const bars = React.useMemo(() => {
     const colors = ["#ff3c2f", "#ff5a2f", "#ff7a30", "#ffa23b", "#ff6a2f", "#ffcc33"];
-    return Array.from({ length: 15 }).map((_, i) => ({
+    return Array.from({ length: 12 }).map((_, i) => ({ // Reduced from 15
       initialPos: new THREE.Vector3(
-        (Math.random() - 0.5) * 30, // Random X across screen
-        (Math.random() - 0.5) * 20, // Random Y across screen
-        (Math.random() - 0.5) * 5   // Random Z depth
+        (Math.random() - 0.5) * 25,
+        (Math.random() - 0.5) * 18,
+        (Math.random() - 0.5) * 4
       ),
       color: colors[Math.floor(Math.random() * colors.length)],
-      length: 2.5 + Math.random() * 3.5,
-      speed: 0.2 + Math.random() * 0.5,
+      length: 2.0 + Math.random() * 3.0,
+      speed: 0.15 + Math.random() * 0.4,
       rotationZ: -Math.PI * (25 + Math.random() * 20) / 180
     }));
   }, []);
 
   return (
     <>
-      <ambientLight intensity={0.4} />
-      <directionalLight position={[3, 4, 5]} intensity={1.5} />
+      <ambientLight intensity={0.5} />
+      <directionalLight position={[3, 4, 5]} intensity={1.2} />
 
       <MovingRoad scrollY={scrollY} />
 
@@ -367,38 +364,46 @@ const Scene = ({ scrollY }: { scrollY: number }) => {
         />
       ))}
 
-      <EffectComposer>
+      <EffectComposer multisampling={0}> {/* Disabled multisampling for performance */}
         <Bloom
-          strength={1.2}
-          radius={0.8}
-          luminanceThreshold={0.1}
+          strength={1.0} // Reduced strength
+          radius={0.7}
+          luminanceThreshold={0.2}
           mipmapBlur
         />
       </EffectComposer>
     </>
   );
-};
+});
 
 const SunsetStreaks = () => {
   const [scrollY, setScrollY] = React.useState(0);
 
   React.useEffect(() => {
+    let frameId: number;
     const handleScroll = () => {
-      // Use requestAnimationFrame for smoother scroll updates in Three.js
-      window.requestAnimationFrame(() => {
+      cancelAnimationFrame(frameId);
+      frameId = requestAnimationFrame(() => {
         setScrollY(window.scrollY);
       });
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      cancelAnimationFrame(frameId);
+    };
   }, []);
 
   return (
     <div className="fixed inset-0 z-[-1] bg-[#0b0b0b]">
-      <Canvas camera={{ position: [0, 0, 8], fov: 45 }}>
+      <Canvas
+        camera={{ position: [0, 0, 8], fov: 45 }}
+        dpr={[1, 1.5]} // Limit pixel ratio for high DPI screens
+        gl={{ antialias: false, powerPreference: "high-performance" }}
+      >
         <Scene scrollY={scrollY} />
       </Canvas>
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0b0b0b]/0 via-transparent to-[#0b0b0b]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent via-[#0b0b0b]/10 to-[#0b0b0b]" />
     </div>
   );
 };
@@ -429,7 +434,7 @@ const App = () => {
               </Suspense>
             </ErrorBoundary>
           )}
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#0b0b0b]" />
+          <div className="absolute bottom-0 left-0 right-0 h-[80vh] bg-gradient-to-t from-[#0b0b0b] via-[#0b0b0b]/60 via-[#0b0b0b]/20 to-transparent pointer-events-none" />
         </div>
 
         {/* Perf Toggle */}
