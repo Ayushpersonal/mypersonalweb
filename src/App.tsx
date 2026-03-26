@@ -541,32 +541,35 @@ const App = () => {
             {
               title: "Hackathon Web Application",
               desc: "Built a full stack web application during a hackathon to solve real-world problems.",
-              tags: ["React", "Node.js", "MongoDB"]
+              tags: ["React", "Node.js", "MongoDB"],
+              href: "https://jal-zeta.vercel.app/"
             },
             {
               title: "Freelance Client Website",
-              desc: "Designed and developed a complete website for a freelance client.",
-              tags: ["HTML", "CSS", "JS"]
+              desc: "Confidential project (details withheld due to NDA).",
+              tags: ["React JS", "Node", "HTML", "Express"]
             },
             {
               title: "Personal Web Projects",
               desc: "Built several experimental projects while learning modern web technologies.",
-              tags: ["React", "APIs", "UI/UX"]
+              tags: ["React", "APIs", "UI/UX"],
+              href: "https://github.com/Ayushpersonal/Saas-app"
             }
           ].map((proj, i) => (
-            <TiltCard
-              key={i}
-              className="group glass rounded-3xl p-8 relative overflow-hidden cursor-pointer"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-accent-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <h3 className="text-2xl font-bold mb-4">{proj.title}</h3>
-              <p className="text-white/60 mb-6 text-sm leading-relaxed">{proj.desc}</p>
-              <div className="flex flex-wrap gap-2">
-                {proj.tags.map(tag => (
-                  <span key={tag} className="px-3 py-1 rounded-full text-xs font-medium bg-white/5 border border-white/10 uppercase tracking-wider">{tag}</span>
-                ))}
-              </div>
-            </TiltCard>
+            <a key={i} href={proj.href || "#"} target={proj.href ? "_blank" : undefined} rel={proj.href ? "noopener noreferrer" : undefined}>
+              <TiltCard
+                className="group glass rounded-3xl p-8 relative overflow-hidden cursor-pointer"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-accent-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <h3 className="text-2xl font-bold mb-4">{proj.title}</h3>
+                <p className="text-white/60 mb-6 text-sm leading-relaxed">{proj.desc}</p>
+                <div className="flex flex-wrap gap-2">
+                  {proj.tags.map(tag => (
+                    <span key={tag} className="px-3 py-1 rounded-full text-xs font-medium bg-white/5 border border-white/10 uppercase tracking-wider">{tag}</span>
+                  ))}
+                </div>
+              </TiltCard>
+            </a>
           ))}
         </div>
       </section>
@@ -581,9 +584,9 @@ const App = () => {
 
           <div className="flex flex-wrap justify-center gap-6 mt-12">
             {[
-              { icon: Github, label: "GitHub", href: "#" },
-              { icon: Linkedin, label: "LinkedIn", href: "#" },
-              { icon: Mail, label: "Email", href: "mailto:ayush@example.com" }
+              { icon: Github, label: "GitHub", href: "https://github.com/Ayushpersonal" },
+              { icon: Linkedin, label: "LinkedIn", href: "https://www.linkedin.com/in/ayush-kumar-695632334/" },
+              { icon: Mail, label: "Email", href: "mailto:ayushpersonal20@gmail.com" }
             ].map((link, i) => (
               <a
                 key={i}
